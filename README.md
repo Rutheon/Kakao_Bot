@@ -23,10 +23,10 @@
 기여, 이슈 및 기능 요청은 환영합니다!
 Contributions, issues and feature requests are welcome!
 
-이슈 페이지는 [여기](https://github.com/deustudy/kakaoBot_JS/issues)를 클릭하시면 됩니다.
-Feel free to check [issues page](https://github.com/deustudy/kakaoBot_JS/issues). 
+이슈 페이지는 [여기](https://github.com/deustudy/Kakao_Bot/issues)를 클릭하시면 됩니다.
+Feel free to check [issues page](https://github.com/deustudy/Kakao_Bot/issues). 
 
-[이 곳](https://github.com/deustudy/kakaoBot_JS/blob/master/CONTRIBUTING)을 통해 contributing guide를 살펴 볼 수 있습니다.
+[이 곳](https://github.com/deustudy/Kakao_Bot/blob/master/CONTRIBUTING.md)을 통해 contributing guide를 살펴 볼 수 있습니다.
 You can also take a look at the [contributing guide](https://github.com/deustudy/kakaoBot_JS/blob/master/CONTRIBUTING.md).
 
 ## 당신의 지원을 보여주세요. [Show your support]
@@ -39,7 +39,7 @@ Give a ⭐️ if this project helped you!
 
 Copyright © 2019 [Jeong MinGyu ](https://github.com/tomorrow9913).
 
-This project is [MIT](https://github.com/deustudy/kakaoBot_JS/blob/master/LICENSE) licensed.
+This project is [MIT](https://github.com/deustudy/Kakao_Bot/blob/master/LICENSE) licensed.
 
 ***
 _이 README 파일은 [readme-md-generator](https://github.com/kefranabg/readme-md-generator)을 통해 만들어 졌습니다._

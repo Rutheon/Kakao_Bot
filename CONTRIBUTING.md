@@ -18,7 +18,7 @@ Contributions, issues and feature requests are welcome!
 [API 문서](https://deviolet.tistory.com/entry/%EB%A9%94%EC%8B%A0%EC%A0%80%EB%B4%87-%EA%B0%80%EC%9D%B4%EB%93%9C-%EB%A0%88%EA%B1%B0%EC%8B%9C-API)
 
 ## 기여_방법
-이 프로젝트에 기여하는 방법은 [깃허브 이슈](https://github.com/deustudy/kakaoBot_JS/issues)를 통해 추가 할 기능에 대한 아이디어를 제공하거나 버그를 제보하는 방법과 직접 코드를 작성하여 기여하는 방법이 있습니다.
+이 프로젝트에 기여하는 방법은 [깃허브 이슈](https://github.com/deustudy/Kakao_Bot/issues)를 통해 추가 할 기능에 대한 아이디어를 제공하거나 버그를 제보하는 방법과 직접 코드를 작성하여 기여하는 방법이 있습니다.
 
 ## 스타일_가이드
 효율적인 프로젝트 관리를 위해 기여자들은 다음의 가이드를 따라야 합니다.
