@@ -2,7 +2,7 @@
 name: 오류 개선 요청(Bug report)
 about: 개선이 필요한 오류를 설명(Create a report to help us improve)
 title: "[Bug]"
-labels: enhancement
+labels: bug
 assignees: ''
 
 ---

@@ -2,7 +2,7 @@
 name: 기능 추가 요청(Feature request)
 about: 프로젝트 아이디어 제안(Suggest an idea for this project)
 title: "[Feature] "
-labels: ''
+labels: enhancement
 assignees: ''
 
 ---
