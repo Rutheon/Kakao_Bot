@@ -1,5 +1,5 @@
 # Welcome to kakaoBot_JS [민규봇] 👋
-![Version](https://img.shields.io/badge/version-0.0.1[DEV]-blue.svg?cacheSeconds=2592000)
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg?cacheSeconds=2592000)
 [![Documentation](https://img.shields.io/badge/documentation-yes-brightgreen.svg)](thteat.)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](d)
 
@@ -10,6 +10,12 @@
 ```sh
 !민규봇 [명령]
 ```
+
+## 명령어 [command]
+* 도움말 : 도움말을 출력합니다.
+* 상태 : 봇이 돌아가는 환경을 출력합니다
+* 학식 [학식당] : 학식당 메뉴를 출력합니다.
+* 문제풀이 [사이트] [문제번호] : 프로그래밍 문제 풀이 해설을 출력합니다(임시운영)
 
 ## 작성자 [Author]
 
