@@ -1,5 +1,6 @@
 const scriptName="main.js";
 const botName = "민규봇";
+const botStartCmd = "!민규봇";
 
 var preSenders = null;
 var preSendTime = null;
@@ -22,7 +23,7 @@ function response(room, msg, sender, isGroupChat, replier, ImageDB, packageName,
 
     msg = msg.split(' ');
 
-    if (msg[0] == "!"+botName) {
+    if (msg[0] == botStartCmd) {
         //봇끼리의 도배 방지 부분
         if(preSenders == sender && (nowTime-preSendTime)/1000 <= coolDown)
         {
@@ -32,7 +33,7 @@ function response(room, msg, sender, isGroupChat, replier, ImageDB, packageName,
         preSenders = sender;
 
         if (msg[1] == null) {
-            replier.reply(botName+"을 처음 만난다면 \"!"+botName+" 도움말\"을 입력해주세요.");
+            replier.reply(botName+"을 처음 만난다면 \""+botStartCmd+" 도움말\"을 입력해주세요.");
         }
 
         if (msg[1] == "도움말") {
@@ -58,8 +59,8 @@ function response(room, msg, sender, isGroupChat, replier, ImageDB, packageName,
                     "백준온라인 - boj\n" +
                     "lavida - lavida\n" +
                     "ascode - ascode\n" +
-                    "!"+botName+" [사이트] [문제번호]\n" +
-                    "ex) !"+botName+" lavida 1000"
+                    botStartCmd+" [사이트] [문제번호]\n" +
+                    "ex) "+botStartCmd+" lavida 1000"
                 );
                 return;
             }
@@ -67,8 +68,8 @@ function response(room, msg, sender, isGroupChat, replier, ImageDB, packageName,
             if (msg[3] == null || parseInt(msg[3], 10) < 1000) {
                 replier.reply(
                     "풀이가 필요한 번호를 입력해 주세요.\n" +
-                    "!"+botName+" [사이트] [문제번호]\n" +
-                    "ex) !"+botName+" lavida 1000"
+                    botStartCmd+" [사이트] [문제번호]\n" +
+                    "ex) "+botStartCmd+" lavida 1000"
                 );
                 return;
             }
@@ -124,7 +125,7 @@ function response(room, msg, sender, isGroupChat, replier, ImageDB, packageName,
                             "정보관\n" +
                             "수덕전\n" +
                             "기숙사\n" +
-                            "ex) !"+botName+" 학식 정보관"
+                            "ex) "+botStartCmd+" 학식 정보관"
                         );    
                     }
                     else {
