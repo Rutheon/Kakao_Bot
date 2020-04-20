@@ -1,6 +1,5 @@
 const scriptName="main.js";
 const botName = "민규봇";
-const botStartCmd = "!민규봇";
 
 var preSenders = null;
 var preSendTime = null;
@@ -23,7 +22,7 @@ function response(room, msg, sender, isGroupChat, replier, ImageDB, packageName,
 
     msg = msg.split(' ');
 
-    if (msg[0] == botStartCmd) {
+    if (msg[0] == "!"+botName) {
         //봇끼리의 도배 방지 부분
         if(preSenders == sender && (nowTime-preSendTime)/1000 <= coolDown)
         {
@@ -33,13 +32,13 @@ function response(room, msg, sender, isGroupChat, replier, ImageDB, packageName,
         preSenders = sender;
 
         if (msg[1] == null) {
-            replier.reply(botName+"을 처음 만난다면 \""+botStartCmd+" 도움말\"을 입력해주세요.");
+            replier.reply(botName+"을 처음 만난다면 봇을 언급하고 도움말을 입력해주세요.");
         }
 
         if (msg[1] == "도움말") {
             replier.reply(
                 "도움말 - "+botName+"의 명령어를 출력합니다.\n" +
-                "학식 [학식당] - 학식당의 메뉴를 출력합니다.(버그 수정중)\n" +
+                "학식 [학식당] - 학식당의 메뉴를 출력합니다.\n" +
                 "상태 - 구동환경의 상태를 출력합니다.\n" +
                 "문제풀이 [사이트] [문제번호] - (임시 운영) 1학년 프로그래밍 과제에 대한 해설을 제공합니다.\n"+
                 "코드는 제공하지 않습니다\n"
@@ -90,6 +89,7 @@ function response(room, msg, sender, isGroupChat, replier, ImageDB, packageName,
                         DataBase.getDataBase(msg[2]+"/"+msg[3])
                     );
                 }
+                return;
             }
         }
 
