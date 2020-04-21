@@ -6,6 +6,67 @@ var preSendTime = null;
 var preChat = null;
 var coolDown = 5;
 
+// 훈민정음
+function sleep(delay) {
+    var start = new Date().getTime();
+    while (new Date().getTime() < start + delay) {};
+}
+
+h_playroom = {};
+
+function Hunmin(strLen, timer) {
+    function getRandomInt(min, max) {
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min)) + min; //최댓값은 제외, 최솟값은 포함
+    }
+
+    cho = ["ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
+
+    this.state = "wating"; // 게임 상태
+    this.keywords = ""; // 제시어
+    for (var i = 0; i < strLen; i++) {
+        this.keywords += cho[getRandomInt(0, 19)];
+    }
+    this.timer = timer;
+    this.nowPlaying = 0;
+    this.user = [];
+    this.used = [];
+
+    this.ansCmp = function (str) {
+        result = "";
+        for (i = 0; i < str.length; i++) {
+            code = str.charCodeAt(i) - 44032;
+            if (code > -1 && code < 11172) {
+                result += cho[Math.floor(code / 588)];
+            }
+        }
+        if (result == this.keywords) {
+            var dicData = Utils.getWebText("https://stdict.korean.go.kr/api/search.do?certkey_no=1418&key={yourKey}&type_search=search&q=" + str).replace(/\s/ig, "");
+            var data = null
+            try{
+                data = [
+                    dicData.split("<total>")[1].split("</total>")[0],
+                    dicData.split("<word><![CDATA[")[1].split("]")[0],
+                    dicData.split("<pos>")[1].split("</pos>")[0],
+                    dicData.split("<definition><![CDATA[")[1].split("]")[0]
+                ];
+            }
+            catch (e) {
+                data[0] = 0;
+            }
+
+            if (parseInt(data[0]) == 0 || isNaN(parseInt(data[0]))==true) {
+                return false;
+            } else {
+                return data;
+            }
+        } else {
+            return false;
+        }
+    };
+}
+
 function response(room, msg, sender, isGroupChat, replier, ImageDB, packageName, threadId) {
     /*(이 내용은 길잡이일 뿐이니 지우셔도 무방합니다)
      *(String) room: 메시지를 받은 방 이름
@@ -44,8 +105,53 @@ function response(room, msg, sender, isGroupChat, replier, ImageDB, packageName,
                 "학식 [학식당] - 학식당의 메뉴를 출력합니다.\n" +
                 "문제풀이 [사이트] [문제번호] - (임시 운영) 1학년 프로그래밍 과제에 대한 해설을 제공합니다.\n" +
                 "코드는 제공하지 않습니다\n" +
-                "-=-=-=-=-=기타 기능-=-=-=-=-=\n"
+                "-=-=-=-=-=기타 기능-=-=-=-=-=\n" +
+                "훈민정음 {옵션} {...} - 그냥 심심할때는 게임 한판을...\n"
             );
+            return;
+        }
+
+        if (msg[1] == "훈민정음") {
+            if (h_playroom[room]) {
+                replier.reply(
+                    "-=-=-=-=-=안내-=-=-=-=-=\n" +
+                    "게임 중에는 다른 게임을 생성할 수 없습니다.\n" +
+                    "-=-=-=-=-=-=-=-=-=-=-=-="
+                );
+            } else {
+                replier.reply(
+                    "-=-=-=-=-=안내-=-=-=-=-=\n" +
+                    sender + "의 요청으로 게임이 시작됩니다.\n" +
+                    "'/참가'를 입력하여 게임에 참여하실 수 있습니다.\n" +
+                    "-=-=-=-=-=-=-=-=-=-=-=-="
+                );
+                h_playroom[room] = new Hunmin(2, 20);
+                h_playroom[room].user.push(sender);
+
+                const timer = 15;
+                java.lang.Thread.sleep(timer * 1000);
+                h_playroom[room].state = "game";
+                replier.reply(
+                    "-=-=-=-=-=안내-=-=-=-=-=\n" +
+                    "게임이 시작됩니다. 초성 : " + h_playroom[room].keywords + "\n" +
+                    "-=-=-=-=참가자 목록-=-=-=-=\n" +
+                    h_playroom[room].user.join(",\n") +
+                    "\n-=-=-=-=-=-=-=-=-=-=-=-="
+                );
+                replier.reply(h_playroom[room].user[0] + "의 차례입니다./제한시간 :" + h_playroom[room].timer + "초\n");
+
+                java.lang.Thread.sleep(h_playroom[room].timer * 1000);
+                if (h_playroom[room].user[h_playroom[room].nowPlaying] != sender) {
+                    return;
+                }
+                replier.reply(
+                    "-=-=-=-=-=안내-=-=-=-=-=\n" +
+                    "게임이 종료되었습니다.\n" +
+                    sender + "가 게임에서 패배하였습니다.\n" +
+                    "-=-=-=-=-=-=-=-=-=-=-=-="
+                );
+                delete h_playroom[room];
+            }
             return;
         }
 
@@ -284,6 +390,79 @@ function response(room, msg, sender, isGroupChat, replier, ImageDB, packageName,
             }
         }
     }
+    try {
+        if (msg[0] == "/참가") {
+            if (h_playroom[room].user.indexOf(sender) != -1) {
+                replier.reply("참가는 한 번 만 가능합니다");
+            } else if (h_playroom[room].state == "wating") {
+                h_playroom[room].user.push(sender);
+                replier.reply(sender + "가 게임에 참여합니다");
+            } else {
+                replier.reply("현재 게임에 참여하실 수 없습니다.");
+            }
+        }
+    } catch (e) {
+        return;
+    }
+
+    if (h_playroom[room] == undefined) {
+        return;
+    }
+    if (h_playroom[room].state == "game" && h_playroom[room].user[h_playroom[room].nowPlaying % h_playroom[room].user.length] == sender) {
+        var dicData = h_playroom[room].ansCmp(msg.join(""));
+
+        if (h_playroom[room].used.indexOf(msg.join("")) != -1) {
+            replier.reply(
+                "-=-=-=-=-=안내-=-=-=-=-=\n" +
+                msg.join("") + "은(는) 이미 제출된 단어입니다.\n" +
+                "초성 : " + h_playroom[room].keywords + "\n" +
+                "-=-=-=-=-=-=-=-=-=-=-=-="
+            );
+        } else if (dicData != false) {
+            h_playroom[room].nowPlaying++;
+            h_playroom[room].used.push(msg.join(""));
+
+            if (h_playroom[room].nowPlaying % h_playroom[room].user.length == 0) {
+
+                if (h_playroom[room].timer - 1 > 1) {
+                    h_playroom[room].timer = h_playroom[room].timer - 1;
+                } else {
+                    h_playroom[room].timer = 1;
+                }
+            }
+
+            replier.reply(
+                "-=-=-=-=-=안내-=-=-=-=-=\n" +
+                dicData[1] + " [" + dicData[2] + "] " + "\n" +
+                dicData[3] + "\n" +
+                h_playroom[room].user[(h_playroom[room].nowPlaying % h_playroom[room].user.length)] + "의 차례\n" +
+                "초성 : " + h_playroom[room].keywords + "/" + h_playroom[room].timer + "초\n" +
+                "-=-=-=-=-=-=-=-=-=-=-=-="
+            );
+            var checkWin = h_playroom[room].nowPlaying;
+            java.lang.Thread.sleep(h_playroom[room].timer * 1000);
+
+            if (h_playroom[room].nowPlaying == checkWin) {
+                replier.reply(
+                    "-=-=-=-=-=안내-=-=-=-=-=\n" +
+                    "게임이 종료되었습니다.\n" +
+                    sender + "(이)가 게임에서 패배하였습니다.\n" +
+                    "-=-=-=-=-=-=-=-=-=-=-=-="
+                );
+                delete h_playroom[room];
+                return;
+            }
+
+        } else {
+            replier.reply(
+                "-=-=-=-=-=안내-=-=-=-=-=\n" +
+                msg.join("") + "은(는) 제시된 초성과 다르거나 사전에 등록되어 있지 않습니다.\n" +
+                "초성 : " + h_playroom[room].keywords + "\n" +
+                "-=-=-=-=-=-=-=-=-=-=-=-="
+            );
+        }
+    }
+
 
 }
 
