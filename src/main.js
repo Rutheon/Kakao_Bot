@@ -94,12 +94,21 @@ function response(room, msg, sender, isGroupChat, replier, ImageDB, packageName,
         }
 
         if (msg[1] == "상태") {
+            let AlarmManager = Api.getContext().getSystemService(android.content.Context.ALARM_SERVICE);
+            let mm = (AlarmManager.ELAPSED_REALTIME_WAKEUP, android.os.SystemClock.elapsedRealtime());
+
+            let sec = (mm/1000)%60;
+            let min = (mm/(1000*60))%60;
+            let hr = (mm/(1000*60*60))%24;
+            let d = (mm/(1000*60*60*24))%365;
+
             replier.reply(
                 "모델명: " + Device.getPhoneBrand() + " "+ Device.getPhoneModel() + "\n" + 
                 "안드로이드 버전: " + Device.getAndroidVersionName() + "\n" +
                 "배터리 잔량: " + Device.getBatteryLevel() + "%\n" +
                 "배터리 온도: " + Device.getBatteryTemperature()/10 + "°C\n" +
-                "충전 상태: " + Device.isCharging() 
+                "충전 상태: " + Device.isCharging()  + "\n" +
+                "부팅시간: " + Math.floor(d) + "일 " + Math.floor(hr) + "시 " + Math.floor(min) +"분 "+Math.floor(sec)+"초"
             );
         }
 
@@ -252,11 +261,11 @@ function response(room, msg, sender, isGroupChat, replier, ImageDB, packageName,
           
              if (rptext.length > rpresult.length){
               weatherStr = weatherStr + "\n기상 특보 : " + rptext[0];
-              for ( var i = 0; i < rpresult.length ; i ++) {
+              for (var i = 0; i < rpresult.length ; i ++) {
                weatherStr = weatherStr + "\n" + titlelist[0][i] + " : " + rptext[i+1] + "   " + rpresult[i] + " " + titlelist[1][i];
               }
              } else {
-              for ( var i = 0; i < rptext.length ; i ++) {
+              for (var i = 0; i < rptext.length ; i ++) {
                weatherStr = weatherStr + "\n" + titlelist[0][i] + " : " + rptext[i] + "   " + rpresult[i] + " " + titlelist[1][i];
               }
              }
