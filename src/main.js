@@ -7,11 +7,6 @@ var preChat = null;
 var coolDown = 5;
 
 // 훈민정음
-function sleep(delay) {
-    var start = new Date().getTime();
-    while (new Date().getTime() < start + delay) {};
-}
-
 h_playroom = {};
 
 function Hunmin(strLen, timer) {
@@ -42,8 +37,8 @@ function Hunmin(strLen, timer) {
             }
         }
         if (result == this.keywords) {
-            var dicData = Utils.getWebText("https://stdict.korean.go.kr/api/search.do?certkey_no=1418&key={yourKey}&type_search=search&q=" + str).replace(/\s/ig, "");
-            var data = null
+            var dicData = Utils.getWebText("https://stdict.korean.go.kr/api/search.do?key=4667CDAEBF929656EF78F007CCA0848A&q=" + str).replace(/\s/ig, "");
+            var data = [];
             try{
                 data = [
                     dicData.split("<total>")[1].split("</total>")[0],
@@ -396,7 +391,7 @@ function response(room, msg, sender, isGroupChat, replier, ImageDB, packageName,
                 replier.reply("참가는 한 번 만 가능합니다");
             } else if (h_playroom[room].state == "wating") {
                 h_playroom[room].user.push(sender);
-                replier.reply(sender + "가 게임에 참여합니다");
+                replier.reply(sender + "(이)가 게임에 참여합니다");
             } else {
                 replier.reply("현재 게임에 참여하실 수 없습니다.");
             }
@@ -446,7 +441,7 @@ function response(room, msg, sender, isGroupChat, replier, ImageDB, packageName,
                 replier.reply(
                     "-=-=-=-=-=안내-=-=-=-=-=\n" +
                     "게임이 종료되었습니다.\n" +
-                    sender + "(이)가 게임에서 패배하였습니다.\n" +
+                    h_playroom[room].user[checkWin%h_playroom[room].user.length] + "(이)가 게임에서 패배하였습니다.\n" +
                     "-=-=-=-=-=-=-=-=-=-=-=-="
                 );
                 delete h_playroom[room];
