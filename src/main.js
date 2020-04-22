@@ -9,7 +9,7 @@ var coolDown = 5;
 // 훈민정음
 h_playroom = {};
 
-function Hunmin(strLen, timer) {
+function Hunmin(strLen, timer, consonant) {
     function getRandomInt(min, max) {
         min = Math.ceil(min);
         max = Math.floor(max);
@@ -21,7 +21,13 @@ function Hunmin(strLen, timer) {
     this.state = "wating"; // 게임 상태
     this.keywords = ""; // 제시어
     for (var i = 0; i < strLen; i++) {
-        this.keywords += cho[getRandomInt(0, 19)];
+        var temp = cho[getRandomInt(0, 19)];
+        if (consonant){
+            while ([ "ㄲ", "ㄸ", "ㅃ", "ㅆ", "ㅉ"].indexOf(temp)!=-1) {
+                temp = cho[getRandomInt(0, 19)];
+            }
+        }
+        this.keywords += temp;
     }
     this.timer = timer;
     this.nowPlaying = 0;
@@ -37,7 +43,7 @@ function Hunmin(strLen, timer) {
             }
         }
         if (result == this.keywords) {
-            var dicData = Utils.getWebText("https://stdict.korean.go.kr/api/search.do?key=4667CDAEBF929656EF78F007CCA0848A&q=" + str).replace(/\s/ig, "");
+            var dicData = Utils.getWebText("https://stdict.korean.go.kr/api/search.do?key=4667CDAEBF929656EF78F007CCA0848A&q=" + str).replace(/\s\s+/g,"");
             var data = [];
             try{
                 data = [
@@ -114,13 +120,34 @@ function response(room, msg, sender, isGroupChat, replier, ImageDB, packageName,
                     "-=-=-=-=-=-=-=-=-=-=-=-="
                 );
             } else {
+                var wordLen = 2;
+                var timerSet = 15;
+                var consonant = false;
+                if(msg.indexOf("-l")!= -1) {
+                    wordLen = msg[msg.indexOf("-l")+1];
+                    if(isNaN(parseInt(wordLen)) == true || parseInt(wordLen) == 0) {
+                        wordLen = 2;
+                    }
+                }
+                if(msg.indexOf("-t")!= -1) {
+                    timerSet = msg[msg.indexOf("-t")+1];
+                    if(isNaN(parseInt(timerSet)) == true || parseInt(wordLen) == 0) {
+                        wordLen = 15;
+                    }
+                }
+                if(msg.indexOf("-c")!= -1) {
+                    consonant = true;
+                }
                 replier.reply(
                     "-=-=-=-=-=안내-=-=-=-=-=\n" +
                     sender + "의 요청으로 게임이 시작됩니다.\n" +
+                    "글자수:"+wordLen+"\n" +
+                    "첫 시간 제한:" +timerSet+"\n" +
+                    "쌍자음 제거: "+consonant+"\n" +
                     "'/참가'를 입력하여 게임에 참여하실 수 있습니다.\n" +
                     "-=-=-=-=-=-=-=-=-=-=-=-="
                 );
-                h_playroom[room] = new Hunmin(2, 20);
+                h_playroom[room] = new Hunmin(wordLen, timerSet, consonant);
                 h_playroom[room].user.push(sender);
 
                 const timer = 15;
@@ -142,7 +169,7 @@ function response(room, msg, sender, isGroupChat, replier, ImageDB, packageName,
                 replier.reply(
                     "-=-=-=-=-=안내-=-=-=-=-=\n" +
                     "게임이 종료되었습니다.\n" +
-                    sender + "가 게임에서 패배하였습니다.\n" +
+                    sender + "(이)가 게임에서 패배하였습니다.\n" +
                     "-=-=-=-=-=-=-=-=-=-=-=-="
                 );
                 delete h_playroom[room];
@@ -428,7 +455,7 @@ function response(room, msg, sender, isGroupChat, replier, ImageDB, packageName,
 
             replier.reply(
                 "-=-=-=-=-=안내-=-=-=-=-=\n" +
-                dicData[1] + " [" + dicData[2] + "] " + "\n" +
+                "[" + dicData[2] + "] " + dicData[1] + "\n" +
                 dicData[3] + "\n" +
                 h_playroom[room].user[(h_playroom[room].nowPlaying % h_playroom[room].user.length)] + "의 차례\n" +
                 "초성 : " + h_playroom[room].keywords + "/" + h_playroom[room].timer + "초\n" +
