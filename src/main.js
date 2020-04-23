@@ -10,21 +10,14 @@ var coolDown = 5;
 h_playroom = {};
 
 function Hunmin(strLen, timer, consonant) {
-    function getRandomInt(min, max) {
-        min = Math.ceil(min);
-        max = Math.floor(max);
-        return Math.floor(Math.random() * (max - min)) + min; //최댓값은 제외, 최솟값은 포함
-    }
-
     cho = ["ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
-
     this.state = "wating"; // 게임 상태
     this.keywords = ""; // 제시어
     for (var i = 0; i < strLen; i++) {
-        var temp = cho[getRandomInt(0, 19)];
+        var temp = cho[parseInt(Utils.getWebText("http://dsg01.dothome.co.kr/api/rand.php?type=number&min=0&max=18").replace(/(<([^>]+)>)/ig, ""))];
         if (consonant){
             while ([ "ㄲ", "ㄸ", "ㅃ", "ㅆ", "ㅉ"].indexOf(temp)!=-1) {
-                temp = cho[getRandomInt(0, 19)];
+                temp = cho[parseInt(Utils.getWebText("http://dsg01.dothome.co.kr/api/rand.php?type=number&min=0&max=18").replace(/(<([^>]+)>)/ig, ""))];
             }
         }
         this.keywords += temp;
@@ -79,412 +72,431 @@ function response(room, msg, sender, isGroupChat, replier, ImageDB, packageName,
      *(String) packageName: 메시지를 받은 메신저의 패키지 이름. (카카오톡: com.kakao.talk, 페메: com.facebook.orca, 라인: jp.naver.line.android
      *(int) threadId: 현재 쓰레드의 순번(스크립트별로 따로 매김)     *Api,Utils객체에 대해서는 설정의 도움말 참조*/
 
-    var nowTime = Date.now();
-    var date = new Date();
+    try{
 
-    msg = msg.split(' ');
-
-    if (msg[0] == "!" + botName) {
-        //봇끼리의 도배 방지 부분
-        if (preSenders == sender && (nowTime - preSendTime) / 1000 <= coolDown) {
-            return;
-        }
-        preSendTime = nowTime;
-        preSenders = sender;
-
-        if (msg[1] == null) {
-            replier.reply(botName + "을 처음 만난다면 봇을 언급하고 도움말을 입력해주세요.");
-        }
-
-        if (msg[1] == "도움말") {
-            replier.reply(
-                "-=-=-=-=-=기본 기능-=-=-=-=-=\n" +
-                "도움말 - " + botName + "의 명령어를 출력합니다.\n" +
-                "상태 - 구동환경의 상태를 출력합니다.\n" +
-                "-=-=-=-=-=검색 기능-=-=-=-=-=\n" +
-                "날씨 [지역] -해당 지역의 명령어를 출력합니다.\n" +
-                "학식 [학식당] - 학식당의 메뉴를 출력합니다.\n" +
-                "문제풀이 [사이트] [문제번호] - (임시 운영) 1학년 프로그래밍 과제에 대한 해설을 제공합니다.\n" +
-                "코드는 제공하지 않습니다\n" +
-                "-=-=-=-=-=기타 기능-=-=-=-=-=\n" +
-                "훈민정음 {옵션} {...} - 그냥 심심할때는 게임 한판을...\n"
-            );
-            return;
-        }
-
-        if (msg[1] == "훈민정음") {
-            if (h_playroom[room]) {
-                replier.reply(
-                    "-=-=-=-=-=안내-=-=-=-=-=\n" +
-                    "게임 중에는 다른 게임을 생성할 수 없습니다.\n" +
-                    "-=-=-=-=-=-=-=-=-=-=-=-="
-                );
-            } else {
-                var wordLen = 2;
-                var timerSet = 15;
-                var consonant = false;
-                if(msg.indexOf("-l")!= -1) {
-                    wordLen = msg[msg.indexOf("-l")+1];
-                    if(isNaN(parseInt(wordLen)) == true || parseInt(wordLen) == 0) {
-                        wordLen = 2;
-                    }
-                }
-                if(msg.indexOf("-t")!= -1) {
-                    timerSet = msg[msg.indexOf("-t")+1];
-                    if(isNaN(parseInt(timerSet)) == true || parseInt(wordLen) == 0) {
-                        wordLen = 15;
-                    }
-                }
-                if(msg.indexOf("-c")!= -1) {
-                    consonant = true;
-                }
-                replier.reply(
-                    "-=-=-=-=-=안내-=-=-=-=-=\n" +
-                    sender + "의 요청으로 게임이 시작됩니다.\n" +
-                    "글자수:"+wordLen+"\n" +
-                    "첫 시간 제한:" +timerSet+"\n" +
-                    "쌍자음 제거: "+consonant+"\n" +
-                    "'/참가'를 입력하여 게임에 참여하실 수 있습니다.\n" +
-                    "-=-=-=-=-=-=-=-=-=-=-=-="
-                );
-                h_playroom[room] = new Hunmin(wordLen, timerSet, consonant);
-                h_playroom[room].user.push(sender);
-
-                const timer = 15;
-                java.lang.Thread.sleep(timer * 1000);
-                h_playroom[room].state = "game";
-                replier.reply(
-                    "-=-=-=-=-=안내-=-=-=-=-=\n" +
-                    "게임이 시작됩니다. 초성 : " + h_playroom[room].keywords + "\n" +
-                    "-=-=-=-=참가자 목록-=-=-=-=\n" +
-                    h_playroom[room].user.join(",\n") +
-                    "\n-=-=-=-=-=-=-=-=-=-=-=-="
-                );
-                replier.reply(h_playroom[room].user[0] + "의 차례입니다./제한시간 :" + h_playroom[room].timer + "초\n");
-
-                java.lang.Thread.sleep(h_playroom[room].timer * 1000);
-                if (h_playroom[room].user[h_playroom[room].nowPlaying] != sender) {
-                    return;
-                }
-                replier.reply(
-                    "-=-=-=-=-=안내-=-=-=-=-=\n" +
-                    "게임이 종료되었습니다.\n" +
-                    sender + "(이)가 게임에서 패배하였습니다.\n" +
-                    "-=-=-=-=-=-=-=-=-=-=-=-="
-                );
-                delete h_playroom[room];
+        var nowTime = Date.now();
+        var date = new Date();
+    
+        msg = msg.split(' ');
+    
+        if (msg[0] == "!" + botName) {
+            //봇끼리의 도배 방지 부분
+            if (preSenders == sender && (nowTime - preSendTime) / 1000 <= coolDown) {
+                return;
             }
-            return;
-        }
-
-        if (msg[1] == "문제풀이") {
-            switch (msg[2]) {
-                case "boj":
-                case "lavida":
-                case "ascode":
-                    break;
-
-                default:
+            preSendTime = nowTime;
+            preSenders = sender;
+    
+            if (msg[1] == null) {
+                replier.reply(botName + "을 처음 만난다면 봇을 언급하고 도움말을 입력해주세요.");
+            }
+    
+            if (msg[1] == "도움말") {
+                replier.reply(
+                    "-=-=-=-=-=기본 기능-=-=-=-=-=\n" +
+                    "도움말 - " + botName + "의 명령어를 출력합니다.\n" +
+                    "상태 - 구동환경의 상태를 출력합니다.\n" +
+                    "-=-=-=-=-=검색 기능-=-=-=-=-=\n" +
+                    "날씨 [지역] -해당 지역의 명령어를 출력합니다.\n" +
+                    "학식 [학식당] - 학식당의 메뉴를 출력합니다.\n" +
+                    "문제풀이 [사이트] [문제번호] - (임시 운영) 1학년 프로그래밍 과제에 대한 해설을 제공합니다.\n" +
+                    "코드는 제공하지 않습니다\n" +
+                    "-=-=-=-=-=기타 기능-=-=-=-=-=\n" +
+                    "훈민정음 {옵션} {...} - 그냥 심심할때는 게임 한판을...\n"
+                );
+                return;
+            }
+    
+            if (msg[1] == "훈민정음") {
+                if (h_playroom[room]) {
                     replier.reply(
-                        "풀이가 필요한 사이트를 입력해 주세요.\n" +
-                        "백준온라인 - boj\n" +
-                        "lavida - lavida\n" +
-                        "ascode - ascode\n" +
+                        "-=-=-=-=-=안내-=-=-=-=-=\n" +
+                        "게임 중에는 다른 게임을 생성할 수 없습니다.\n" +
+                        "-=-=-=-=-=-=-=-=-=-=-=-="
+                    );
+                } else {
+                    var wordLen = 2;
+                    var timerSet = 15;
+                    var consonant = false;
+                    if(msg.indexOf("-l")!= -1) {
+                        wordLen = parseInt(msg[msg.indexOf("-l")+1]);
+                        if(isNaN(wordLen) == true || parseInt(wordLen) == 0) {
+                            wordLen = 2;
+                        }
+                    }
+                    if(msg.indexOf("-t")!= -1) {
+                        timerSet = parseInt(msg[msg.indexOf("-t")+1]);
+                        if(isNaN(timerSet) == true || parseInt(wordLen) == 0) {
+                            timerSet = 15;
+                        }
+                    }
+                    if(msg.indexOf("-c")!= -1) {
+                        consonant = true;
+                    }
+                    replier.reply(
+                        "-=-=-=-=-=안내-=-=-=-=-=\n" +
+                        sender + "의 요청으로 게임이 시작됩니다.\n" +
+                        "글자수:"+wordLen+"\n" +
+                        "첫 시간 제한:" +timerSet+"\n" +
+                        "쌍자음 제거: "+consonant+"\n" +
+                        "'/참가'를 입력하여 게임에 참여하실 수 있습니다.\n" +
+                        "-=-=-=-=-=-=-=-=-=-=-=-="
+                    );
+                    h_playroom[room] = new Hunmin(wordLen, timerSet, consonant);
+                    h_playroom[room].user.push(sender);
+    
+                    const timer = 15;
+                    java.lang.Thread.sleep(timer * 1000);
+                    h_playroom[room].state = "game";
+                    replier.reply(
+                        "-=-=-=-=-=안내-=-=-=-=-=\n" +
+                        "게임이 시작됩니다. 초성 : " + h_playroom[room].keywords + "\n" +
+                        "-=-=-=-=참가자 목록-=-=-=-=\n" +
+                        h_playroom[room].user.join(",\n") +
+                        "\n-=-=-=-=-=-=-=-=-=-=-=-="
+                    );
+                    replier.reply(h_playroom[room].user[0] + "의 차례입니다./제한시간 :" + h_playroom[room].timer + "초\n");
+    
+                    java.lang.Thread.sleep(h_playroom[room].timer * 1000);
+                    if (h_playroom[room].user[h_playroom[room].nowPlaying] != sender) {
+                        return;
+                    }
+                    replier.reply(
+                        "-=-=-=-=-=안내-=-=-=-=-=\n" +
+                        "게임이 종료되었습니다.\n" +
+                        sender + "(이)가 게임에서 패배하였습니다.\n" +
+                        "-=-=-=-=-=-=-=-=-=-=-=-="
+                    );
+                    delete h_playroom[room];
+                }
+                return;
+            }
+    
+            if (msg[1] == "문제풀이") {
+                switch (msg[2]) {
+                    case "boj":
+                    case "lavida":
+                    case "ascode":
+                        break;
+    
+                    default:
+                        replier.reply(
+                            "풀이가 필요한 사이트를 입력해 주세요.\n" +
+                            "백준온라인 - boj\n" +
+                            "lavida - lavida\n" +
+                            "ascode - ascode\n" +
+                            botStartCmd + " [사이트] [문제번호]\n" +
+                            "ex) " + botStartCmd + " lavida 1000"
+                        );
+                        return;
+                }
+    
+                if (msg[3] == null || parseInt(msg[3], 10) < 1000) {
+                    replier.reply(
+                        "풀이가 필요한 번호를 입력해 주세요.\n" +
                         botStartCmd + " [사이트] [문제번호]\n" +
                         "ex) " + botStartCmd + " lavida 1000"
                     );
                     return;
-            }
-
-            if (msg[3] == null || parseInt(msg[3], 10) < 1000) {
-                replier.reply(
-                    "풀이가 필요한 번호를 입력해 주세요.\n" +
-                    botStartCmd + " [사이트] [문제번호]\n" +
-                    "ex) " + botStartCmd + " lavida 1000"
-                );
-                return;
-            } else {
-                if (msg[4] == "등록") {
-                    data = msg.join(" ").replace(/^!민규봇.문제풀이 ((lavida)|(ascode)|(boj))\s([0-9]){4,}\s등록 /gi, "[해설] ");
-                    DataBase.appendDataBase(msg[2] + "/" + msg[3], data);
-                    return;
-                }
-
-                if (DataBase.getDataBase(msg[2] + "/" + msg[3]) == null) {
-                    replier.reply(
-                        "아직 준비중인 기능입니다." + msg[3] + "번 데이터 추가 중"
-                    );
                 } else {
-                    replier.reply(
-                        DataBase.getDataBase(msg[2] + "/" + msg[3])
-                    );
-                }
-                return;
-            }
-        }
-
-        if (msg[1] == "상태") {
-            let AlarmManager = Api.getContext().getSystemService(android.content.Context.ALARM_SERVICE);
-            let mm = (AlarmManager.ELAPSED_REALTIME_WAKEUP, android.os.SystemClock.elapsedRealtime());
-
-            let sec = (mm / 1000) % 60;
-            let min = (mm / (1000 * 60)) % 60;
-            let hr = (mm / (1000 * 60 * 60)) % 24;
-            let d = (mm / (1000 * 60 * 60 * 24)) % 365;
-
-            replier.reply(
-                "모델명: " + Device.getPhoneBrand() + " " + Device.getPhoneModel() + "\n" +
-                "안드로이드 버전: " + Device.getAndroidVersionName() + "\n" +
-                "배터리 잔량: " + Device.getBatteryLevel() + "%\n" +
-                "배터리 온도: " + Device.getBatteryTemperature() / 10 + "°C\n" +
-                "충전 상태: " + Device.isCharging() + "\n" +
-                "부팅시간: " + Math.floor(d) + "일 " + Math.floor(hr) + "시 " + Math.floor(min) + "분 " + Math.floor(sec) + "초"
-            );
-            return;
-        }
-
-        if (msg[1] == "학식") {
-            switch (msg[2]) {
-                case "수덕전":
-                    option1 = 1;
-                    option2 = 1;
-                    break;
-                case "정보관":
-                    option1 = 1;
-                    option2 = 2;
-                    break;
-                case "기숙사":
-                    option1 = 2;
-                    option2 = 1;
-                    break;
-
-                default:
-                    if (msg[2] == null) {
+                    if (msg[4] == "등록") {
+                        data = msg.join(" ").replace(/^!민규봇.문제풀이 ((lavida)|(ascode)|(boj))\s([0-9]){4,}\s등록 /gi, "[해설] ");
+                        DataBase.appendDataBase(msg[2] + "/" + msg[3], data);
+                        return;
+                    }
+    
+                    if (DataBase.getDataBase(msg[2] + "/" + msg[3]) == null) {
                         replier.reply(
-                            "조회할 학식당을 골라주세요\n" +
-                            "정보관\n" +
-                            "수덕전\n" +
-                            "기숙사\n" +
-                            "ex) " + botStartCmd + " 학식 정보관"
+                            "아직 준비중인 기능입니다." + msg[3] + "번 데이터 추가 중"
                         );
                     } else {
-                        replier.reply("장소 입력이 잘못되었습니다.");
+                        replier.reply(
+                            DataBase.getDataBase(msg[2] + "/" + msg[3])
+                        );
                     }
                     return;
-            }
-
-            // 날짜 설정
-            var year = date.getFullYear(),
-                mm = date.getMonth() + 1,
-                dd = date.getDate();
-            if (dd < 10) {
-                dd = '0' + dd;
-            }
-            if (mm < 10) {
-                mm = '0' + mm;
-            }
-            var today = String(year) + mm + dd;
-
-            var link = "https://smart.deu.ac.kr/m/sel_dfood?date=" + today + "&gubun1=" + String(option1) + "&gubun2=" + String(option2);
-            var webData = Utils.getWebText(link).replace(/(<([^>]+)>)/ig, "");
-            var menuJSON = JSON.parse(webData);
-
-            var sendMSG = "";
-            var menu = null;
-            switch (msg[2]) {
-                case "기숙사":
-                    if (menuJSON["기숙사 식당 조식"] != null) {
-                        menu = menuJSON["기숙사 식당 조식"];
-                        sendMSG = menu[0].kioskName + " (" + menu[0].menuTime + ")\n" + menu[0].menuName + "\n\n";
-                    }
-                    if (menuJSON["기숙사 식당 중식"] != null) {
-                        menu = menuJSON["기숙사 식당 중식"];
-                        sendMSG = sendMSG + menu[0].kioskName + " (" + menu[0].menuTime + ")\n" + menu[0].menuName + "\n\n";
-                    }
-                    if (menuJSON["기숙사 식당 석식"] != null) {
-                        menu = menuJSON["기숙사 식당 석식"];
-                        sendMSG = sendMSG + menu[0].kioskName + " (" + menu[0].menuTime + ")\n" + menu[0].menuName + "\n\n";
-                    }
-                    break;
-                case "수덕전":
-                    if (menuJSON["수덕전 코너1"] != null) {
-                        menu = menuJSON["수덕전 코너1"];
-                        sendMSG = menu[0].kioskName + " (" + menu[0].menuTime + ")\n" + menu[0].menuName + "\n\n";
-                    }
-                    if (menuJSON["수덕전 코너2"] != null) {
-                        menu = menuJSON["수덕전 코너2"];
-                        sendMSG = sendMSG + menu[0].kioskName + " (" + menu[0].menuTime + ")\n" + menu[0].menuName + "\n\n";
-                    }
-                    if (menuJSON["수덕전 코너3"] != null) {
-                        menu = menuJSON["수덕전 코너3"];
-                        sendMSG = sendMSG + menu[0].kioskName + " (" + menu[0].menuTime + ")\n" + menu[0].menuName + "\n\n";
-                    }
-                    if (menuJSON["수덕전 코너4"] != null) {
-                        menu = menuJSON["수덕전 코너4"];
-                        sendMSG = sendMSG + menu[0].kioskName + " (" + menu[0].menuTime + ")\n" + menu[0].menuName + "\n\n";
-                    }
-                    break;
-                case "정보관":
-                    if (menuJSON["정보공학관 코너1"] != null) {
-                        menu = menuJSON["정보공학관 코너1"];
-                        sendMSG = menu[0].kioskName + " (" + menu[0].menuTime + ")\n" + menu[0].menuName + "\n\n";
-                    }
-                    if (menuJSON["정보공학관 코너2"] != null) {
-                        menu = menuJSON["정보공학관 코너2"];
-                        sendMSG = sendMSG + menu[0].kioskName + " (" + menu[0].menuTime + ")\n" + menu[0].menuName + "\n\n";
-                    }
-                    if (menuJSON["정보공학관 코너3"] != null) {
-                        menu = menuJSON["정보공학관 코너3"];
-                        sendMSG = sendMSG + menu[0].kioskName + " (" + menu[0].menuTime + ")\n" + menu[0].menuName + "\n\n";
-                    }
-                    if (menuJSON["정보공학관 코너4"] != null) {
-                        menu = menuJSON["정보공학관 코너4"];
-                        sendMSG = sendMSG + menu[0].kioskName + " (" + menu[0].menuTime + ")\n" + menu[0].menuName + "\n\n";
-                    }
-                    break;
-
-                default:
-                    break;
-            }
-
-            if (sendMSG == "") {
-                sendMSG = "업로드 된 학식단이 없습니다.";
-            } else {
-                sendMSG = sendMSG + "입니다.";
-            }
-            replier.reply(sendMSG);
-            return;
-        }
-
-        if (msg[1] == "날씨") {
-            cmd = msg.join(" ").substr(7);
-            cmd.trim();
-            try {
-                var weatherStr = "";
-
-                var weatherarea = org.jsoup.Jsoup.connect("https://m.search.naver.com/search.naver?query=" + cmd + "날씨").get().select("div.title_wrap").select("h2").text();
-
-                if (!weatherarea) {
-                    replier.reply(cmd + " 의 날씨 정보를 가져올 수 없습니다.");
-                    return;
-                }
-                var weatherdata = org.jsoup.Jsoup.connect("https://m.search.naver.com/search.naver?query=" + cmd + "날씨").get().select("div.status_wrap");
-
-                var weathertom = org.jsoup.Jsoup.connect("https://m.search.naver.com/search.naver?query=" + cmd + "날씨").get().select("div.inner_box");
-
-                var wtmain = weatherdata.select("div.weather_main").get(0).text(); // 현재 날씨
-                var nowtem = weatherdata.select("div.temperature_text").get(0).text().replace("현재 온도", "").replace("°", "") + " ℃"; // 현재 온도
-                var uptem = weatherdata.select("dd.up_temperature").text().replace("°", "") + " ℃"; // 최고 온도
-                var dntem = weatherdata.select("dd.down_temperature").text().replace("°", "") + " ℃"; // 최저 온도
-                var fltem = weatherdata.select("dd.feeling_temperature").text().replace("체감", "").replace("°", "") + " ℃"; // 체감 온도
-
-                var reportlist = weatherdata.select("ul.list_box");
-
-                var rpsp = reportlist.select("li.type_report report8").select("span.figure_text").text();
-                var rptext = reportlist.select("span.figure_text").text().split(" ");
-                var rpresult = reportlist.select("span.figure_result").text().split(" ");
-
-                var titlelist = [
-                    ["미세먼지", "초미세먼지", "자외선", "습도", "바람"],
-                    ["㎍/㎥", "㎍/㎥", "", "%", "m/s"]
-                ];
-
-                weatherStr = weatherStr + "[ " + cmd + " ] 의 날씨 정보입니다.\n 위치 : " + weatherarea;
-                weatherStr = weatherStr + "\n\n현재 날씨 : " + wtmain + "\n현재 온도 : " + nowtem + "\n최고 온도 : " + uptem + "\n최저 온도 : " + dntem + "\n체감 온도 : " + fltem + "\n";
-
-                if (rptext.length > rpresult.length) {
-                    weatherStr = weatherStr + "\n기상 특보 : " + rptext[0];
-                    for (var i = 0; i < rpresult.length; i++) {
-                        weatherStr = weatherStr + "\n" + titlelist[0][i] + " : " + rptext[i + 1] + "   " + rpresult[i] + " " + titlelist[1][i];
-                    }
-                } else {
-                    for (var i = 0; i < rptext.length; i++) {
-                        weatherStr = weatherStr + "\n" + titlelist[0][i] + " : " + rptext[i] + "   " + rpresult[i] + " " + titlelist[1][i];
-                    }
-                }
-
-                weatherStr = weatherStr + "\n\n내일 오전 날씨 : " + weathertom.select("div.weather_main").get(0).text() + ", " + weathertom.select("strong").get(0).text() + "\n        강수확률 : " + weathertom.select("strong").get(1).text();
-                weatherStr = weatherStr + "\n\n내일 오후 날씨 : " + weathertom.select("div.weather_main").get(1).text() + ", " + weathertom.select("strong").get(2).text() + "\n        강수확률 : " + weathertom.select("strong").get(3).text();
-
-                replier.reply(weatherStr);
-            } catch (e) {
-                replier.reply(cmd + " 의 날씨 정보를 가져올 수 없습니다.");
-            }
-        }
-    }
-    try {
-        if (msg[0] == "/참가") {
-            if (h_playroom[room].user.indexOf(sender) != -1) {
-                replier.reply("참가는 한 번 만 가능합니다");
-            } else if (h_playroom[room].state == "wating") {
-                h_playroom[room].user.push(sender);
-                replier.reply(sender + "(이)가 게임에 참여합니다");
-            } else {
-                replier.reply("현재 게임에 참여하실 수 없습니다.");
-            }
-        }
-    } catch (e) {
-        return;
-    }
-
-    if (h_playroom[room] == undefined) {
-        return;
-    }
-    if (h_playroom[room].state == "game" && h_playroom[room].user[h_playroom[room].nowPlaying % h_playroom[room].user.length] == sender) {
-        var dicData = h_playroom[room].ansCmp(msg.join(""));
-
-        if (h_playroom[room].used.indexOf(msg.join("")) != -1) {
-            replier.reply(
-                "-=-=-=-=-=안내-=-=-=-=-=\n" +
-                msg.join("") + "은(는) 이미 제출된 단어입니다.\n" +
-                "초성 : " + h_playroom[room].keywords + "\n" +
-                "-=-=-=-=-=-=-=-=-=-=-=-="
-            );
-        } else if (dicData != false) {
-            h_playroom[room].nowPlaying++;
-            h_playroom[room].used.push(msg.join(""));
-
-            if (h_playroom[room].nowPlaying % h_playroom[room].user.length == 0) {
-
-                if (h_playroom[room].timer - 1 > 1) {
-                    h_playroom[room].timer = h_playroom[room].timer - 1;
-                } else {
-                    h_playroom[room].timer = 1;
                 }
             }
-
-            replier.reply(
-                "-=-=-=-=-=안내-=-=-=-=-=\n" +
-                "[" + dicData[2] + "] " + dicData[1] + "\n" +
-                dicData[3] + "\n" +
-                h_playroom[room].user[(h_playroom[room].nowPlaying % h_playroom[room].user.length)] + "의 차례\n" +
-                "초성 : " + h_playroom[room].keywords + "/" + h_playroom[room].timer + "초\n" +
-                "-=-=-=-=-=-=-=-=-=-=-=-="
-            );
-            var checkWin = h_playroom[room].nowPlaying;
-            java.lang.Thread.sleep(h_playroom[room].timer * 1000);
-
-            if (h_playroom[room].nowPlaying == checkWin) {
+    
+            if (msg[1] == "상태") {
+                let AlarmManager = Api.getContext().getSystemService(android.content.Context.ALARM_SERVICE);
+                let mm = (AlarmManager.ELAPSED_REALTIME_WAKEUP, android.os.SystemClock.elapsedRealtime());
+    
+                let sec = (mm / 1000) % 60;
+                let min = (mm / (1000 * 60)) % 60;
+                let hr = (mm / (1000 * 60 * 60)) % 24;
+                let d = (mm / (1000 * 60 * 60 * 24)) % 365;
+    
                 replier.reply(
-                    "-=-=-=-=-=안내-=-=-=-=-=\n" +
-                    "게임이 종료되었습니다.\n" +
-                    h_playroom[room].user[checkWin%h_playroom[room].user.length] + "(이)가 게임에서 패배하였습니다.\n" +
-                    "-=-=-=-=-=-=-=-=-=-=-=-="
+                    "모델명: " + Device.getPhoneBrand() + " " + Device.getPhoneModel() + "\n" +
+                    "안드로이드 버전: " + Device.getAndroidVersionName() + "\n" +
+                    "배터리 잔량: " + Device.getBatteryLevel() + "%\n" +
+                    "배터리 온도: " + Device.getBatteryTemperature() / 10 + "°C\n" +
+                    "충전 상태: " + Device.isCharging() + "\n" +
+                    "부팅시간: " + Math.floor(d) + "일 " + Math.floor(hr) + "시 " + Math.floor(min) + "분 " + Math.floor(sec) + "초"
                 );
-                delete h_playroom[room];
                 return;
             }
-
-        } else {
+    
+            if (msg[1] == "학식") {
+                switch (msg[2]) {
+                    case "수덕전":
+                        option1 = 1;
+                        option2 = 1;
+                        break;
+                    case "정보관":
+                        option1 = 1;
+                        option2 = 2;
+                        break;
+                    case "기숙사":
+                        option1 = 2;
+                        option2 = 1;
+                        break;
+    
+                    default:
+                        if (msg[2] == null) {
+                            replier.reply(
+                                "조회할 학식당을 골라주세요\n" +
+                                "정보관\n" +
+                                "수덕전\n" +
+                                "기숙사\n" +
+                                "ex) " + botStartCmd + " 학식 정보관"
+                            );
+                        } else {
+                            replier.reply("장소 입력이 잘못되었습니다.");
+                        }
+                        return;
+                }
+    
+                // 날짜 설정
+                var year = date.getFullYear(),
+                    mm = date.getMonth() + 1,
+                    dd = date.getDate();
+                if (dd < 10) {
+                    dd = '0' + dd;
+                }
+                if (mm < 10) {
+                    mm = '0' + mm;
+                }
+                var today = String(year) + mm + dd;
+    
+                var link = "https://smart.deu.ac.kr/m/sel_dfood?date=" + today + "&gubun1=" + String(option1) + "&gubun2=" + String(option2);
+                var webData = Utils.getWebText(link).replace(/(<([^>]+)>)/ig, "");
+                var menuJSON = JSON.parse(webData);
+    
+                var sendMSG = "";
+                var menu = null;
+                switch (msg[2]) {
+                    case "기숙사":
+                        if (menuJSON["기숙사 식당 조식"] != null) {
+                            menu = menuJSON["기숙사 식당 조식"];
+                            sendMSG = menu[0].kioskName + " (" + menu[0].menuTime + ")\n" + menu[0].menuName + "\n\n";
+                        }
+                        if (menuJSON["기숙사 식당 중식"] != null) {
+                            menu = menuJSON["기숙사 식당 중식"];
+                            sendMSG = sendMSG + menu[0].kioskName + " (" + menu[0].menuTime + ")\n" + menu[0].menuName + "\n\n";
+                        }
+                        if (menuJSON["기숙사 식당 석식"] != null) {
+                            menu = menuJSON["기숙사 식당 석식"];
+                            sendMSG = sendMSG + menu[0].kioskName + " (" + menu[0].menuTime + ")\n" + menu[0].menuName + "\n\n";
+                        }
+                        break;
+                    case "수덕전":
+                        if (menuJSON["수덕전 코너1"] != null) {
+                            menu = menuJSON["수덕전 코너1"];
+                            sendMSG = menu[0].kioskName + " (" + menu[0].menuTime + ")\n" + menu[0].menuName + "\n\n";
+                        }
+                        if (menuJSON["수덕전 코너2"] != null) {
+                            menu = menuJSON["수덕전 코너2"];
+                            sendMSG = sendMSG + menu[0].kioskName + " (" + menu[0].menuTime + ")\n" + menu[0].menuName + "\n\n";
+                        }
+                        if (menuJSON["수덕전 코너3"] != null) {
+                            menu = menuJSON["수덕전 코너3"];
+                            sendMSG = sendMSG + menu[0].kioskName + " (" + menu[0].menuTime + ")\n" + menu[0].menuName + "\n\n";
+                        }
+                        if (menuJSON["수덕전 코너4"] != null) {
+                            menu = menuJSON["수덕전 코너4"];
+                            sendMSG = sendMSG + menu[0].kioskName + " (" + menu[0].menuTime + ")\n" + menu[0].menuName + "\n\n";
+                        }
+                        break;
+                    case "정보관":
+                        if (menuJSON["정보공학관 코너1"] != null) {
+                            menu = menuJSON["정보공학관 코너1"];
+                            sendMSG = menu[0].kioskName + " (" + menu[0].menuTime + ")\n" + menu[0].menuName + "\n\n";
+                        }
+                        if (menuJSON["정보공학관 코너2"] != null) {
+                            menu = menuJSON["정보공학관 코너2"];
+                            sendMSG = sendMSG + menu[0].kioskName + " (" + menu[0].menuTime + ")\n" + menu[0].menuName + "\n\n";
+                        }
+                        if (menuJSON["정보공학관 코너3"] != null) {
+                            menu = menuJSON["정보공학관 코너3"];
+                            sendMSG = sendMSG + menu[0].kioskName + " (" + menu[0].menuTime + ")\n" + menu[0].menuName + "\n\n";
+                        }
+                        if (menuJSON["정보공학관 코너4"] != null) {
+                            menu = menuJSON["정보공학관 코너4"];
+                            sendMSG = sendMSG + menu[0].kioskName + " (" + menu[0].menuTime + ")\n" + menu[0].menuName + "\n\n";
+                        }
+                        break;
+    
+                    default:
+                        break;
+                }
+    
+                if (sendMSG == "") {
+                    sendMSG = "업로드 된 학식단이 없습니다.";
+                } else {
+                    sendMSG = sendMSG + "입니다.";
+                }
+                replier.reply(sendMSG);
+                return;
+            }
+    
+            if (msg[1] == "날씨") {
+                cmd = msg.join(" ").substr(7);
+                cmd.trim();
+                try {
+                    var weatherStr = "";
+    
+                    var weatherarea = org.jsoup.Jsoup.connect("https://m.search.naver.com/search.naver?query=" + cmd + "날씨").get().select("div.title_wrap").select("h2").text();
+    
+                    if (!weatherarea) {
+                        replier.reply(cmd + " 의 날씨 정보를 가져올 수 없습니다.");
+                        return;
+                    }
+                    var weatherdata = org.jsoup.Jsoup.connect("https://m.search.naver.com/search.naver?query=" + cmd + "날씨").get().select("div.status_wrap");
+    
+                    var weathertom = org.jsoup.Jsoup.connect("https://m.search.naver.com/search.naver?query=" + cmd + "날씨").get().select("div.inner_box");
+    
+                    var wtmain = weatherdata.select("div.weather_main").get(0).text(); // 현재 날씨
+                    var nowtem = weatherdata.select("div.temperature_text").get(0).text().replace("현재 온도", "").replace("°", "") + " ℃"; // 현재 온도
+                    var uptem = weatherdata.select("dd.up_temperature").text().replace("°", "") + " ℃"; // 최고 온도
+                    var dntem = weatherdata.select("dd.down_temperature").text().replace("°", "") + " ℃"; // 최저 온도
+                    var fltem = weatherdata.select("dd.feeling_temperature").text().replace("체감", "").replace("°", "") + " ℃"; // 체감 온도
+    
+                    var reportlist = weatherdata.select("ul.list_box");
+    
+                    var rpsp = reportlist.select("li.type_report report8").select("span.figure_text").text();
+                    var rptext = reportlist.select("span.figure_text").text().split(" ");
+                    var rpresult = reportlist.select("span.figure_result").text().split(" ");
+    
+                    var titlelist = [
+                        ["미세먼지", "초미세먼지", "자외선", "습도", "바람"],
+                        ["㎍/㎥", "㎍/㎥", "", "%", "m/s"]
+                    ];
+    
+                    weatherStr = weatherStr + "[ " + cmd + " ] 의 날씨 정보입니다.\n 위치 : " + weatherarea;
+                    weatherStr = weatherStr + "\n\n현재 날씨 : " + wtmain + "\n현재 온도 : " + nowtem + "\n최고 온도 : " + uptem + "\n최저 온도 : " + dntem + "\n체감 온도 : " + fltem + "\n";
+    
+                    if (rptext.length > rpresult.length) {
+                        weatherStr = weatherStr + "\n기상 특보 : " + rptext[0];
+                        for (var i = 0; i < rpresult.length; i++) {
+                            weatherStr = weatherStr + "\n" + titlelist[0][i] + " : " + rptext[i + 1] + "   " + rpresult[i] + " " + titlelist[1][i];
+                        }
+                    } else {
+                        for (var i = 0; i < rptext.length; i++) {
+                            weatherStr = weatherStr + "\n" + titlelist[0][i] + " : " + rptext[i] + "   " + rpresult[i] + " " + titlelist[1][i];
+                        }
+                    }
+    
+                    weatherStr = weatherStr + "\n\n내일 오전 날씨 : " + weathertom.select("div.weather_main").get(0).text() + ", " + weathertom.select("strong").get(0).text() + "\n        강수확률 : " + weathertom.select("strong").get(1).text();
+                    weatherStr = weatherStr + "\n\n내일 오후 날씨 : " + weathertom.select("div.weather_main").get(1).text() + ", " + weathertom.select("strong").get(2).text() + "\n        강수확률 : " + weathertom.select("strong").get(3).text();
+    
+                    replier.reply(weatherStr);
+                } catch (e) {
+                    replier.reply(cmd + " 의 날씨 정보를 가져올 수 없습니다.");
+                }
+            }
+        }
+        try {
+            if (msg[0] == "/참가") {
+                if (h_playroom[room].user.indexOf(sender) != -1) {
+                    replier.reply("참가는 한 번 만 가능합니다");
+                } else if (h_playroom[room].state == "wating") {
+                    h_playroom[room].user.push(sender);
+                    replier.reply(sender + "(이)가 게임에 참여합니다");
+                } else {
+                    replier.reply("현재 게임에 참여하실 수 없습니다.");
+                }
+            }
+        } catch (e) {
+            return;
+        }
+    
+        if (h_playroom[room] == undefined) {
+            return;
+        }
+        try {
+            if (h_playroom[room].state == "game" && h_playroom[room].user[h_playroom[room].nowPlaying % h_playroom[room].user.length] == sender) {
+                var dicData = h_playroom[room].ansCmp(msg.join(""));
+        
+                if (h_playroom[room].used.indexOf(msg.join("")) != -1) {
+                    replier.reply(
+                        "-=-=-=-=-=안내-=-=-=-=-=\n" +
+                        msg.join("") + "은(는) 이미 제출된 단어입니다.\n" +
+                        "초성 : " + h_playroom[room].keywords + "\n" +
+                        "-=-=-=-=-=-=-=-=-=-=-=-="
+                    );
+                } else if (dicData != false) {
+                    h_playroom[room].nowPlaying++;
+                    h_playroom[room].used.push(msg.join(""));
+        
+                    if (h_playroom[room].nowPlaying % h_playroom[room].user.length == 0) {
+        
+                        if (h_playroom[room].timer - 1 > 1) {
+                            h_playroom[room].timer = h_playroom[room].timer - 1;
+                        } else {
+                            h_playroom[room].timer = 1;
+                        }
+                    }
+        
+                    replier.reply(
+                        "-=-=-=-=-=안내-=-=-=-=-=\n" +
+                        "[" + dicData[2] + "] " + dicData[1] + "\n" +
+                        dicData[3] + "\n" +
+                        h_playroom[room].user[(h_playroom[room].nowPlaying % h_playroom[room].user.length)] + "의 차례\n" +
+                        "초성 : " + h_playroom[room].keywords + "/" + h_playroom[room].timer + "초\n" +
+                        "-=-=-=-=-=-=-=-=-=-=-=-="
+                    );
+                    var checkWin = h_playroom[room].nowPlaying;
+                    java.lang.Thread.sleep(h_playroom[room].timer * 1000);
+        
+                    if (h_playroom[room].nowPlaying == checkWin) {
+                        replier.reply(
+                            "-=-=-=-=-=안내-=-=-=-=-=\n" +
+                            "게임이 종료되었습니다.\n" +
+                            h_playroom[room].user[checkWin%h_playroom[room].user.length] + "(이)가 게임에서 패배하였습니다.\n" +
+                            "-=-=-=-=-=-=-=-=-=-=-=-="
+                        );
+                        delete h_playroom[room];
+                        return;
+                    }
+        
+                } else {
+                    replier.reply(
+                        "-=-=-=-=-=안내-=-=-=-=-=\n" +
+                        msg.join("") + "은(는) 제시된 초성과 다르거나 사전에 등록되어 있지 않습니다.\n" +
+                        "초성 : " + h_playroom[room].keywords + "\n" +
+                        "-=-=-=-=-=-=-=-=-=-=-=-="
+                    );
+                }
+            }
+        }
+        catch (e) {
             replier.reply(
-                "-=-=-=-=-=안내-=-=-=-=-=\n" +
-                msg.join("") + "은(는) 제시된 초성과 다르거나 사전에 등록되어 있지 않습니다.\n" +
-                "초성 : " + h_playroom[room].keywords + "\n" +
+                "-=-=-=-=-=Err Log-=-=-=-=-=\n" +
+                e+"\n" +
                 "-=-=-=-=-=-=-=-=-=-=-=-="
             );
         }
     }
-
+    catch (e) {
+        replier.reply(
+            "-=-=-=-=-=Err Log-=-=-=-=-=\n" +
+            e+"\n" +
+            "-=-=-=-=-=-=-=-=-=-=-=-="
+        );
+    }
+    
 
 }
 
