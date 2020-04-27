@@ -1,4 +1,4 @@
-const scriptName = "wordCain.js";
+const scriptName = "wordChain.js";
 const botName = "민규봇";
 
 function IsUsingWord(str) {
@@ -67,7 +67,7 @@ function EndingWord(timer, mode) {
     if (mode) {
         this.difficulty = "noOneKill";
     }
-    this.blackList = ["릇", "늬", "륨", "뮴", "슭", "늄", "즙", "꾼"];
+    this.blackList = ["릇", "늬", "륨", "뮴", "늄", "듐", "튬", "슭", "즙", "꾼"];
     this.nowPlaying = 0;
     this.user = [];
     this.used = [];
@@ -86,10 +86,11 @@ function response(room, msg, sender, isGroupChat, replier, ImageDB, packageName,
      *(String) ImageDB.getProfileImage(): 전송자의 프로필 이미지를 Base64로 인코딩하여 반환
      *(String) packageName: 메시지를 받은 메신저의 패키지 이름. (카카오톡: com.kakao.talk, 페메: com.facebook.orca, 라인: jp.naver.line.android
      *(int) threadId: 현재 쓰레드의 순번(스크립트별로 따로 매김)     *Api,Utils객체에 대해서는 설정의 도움말 참조*/
-    msg = msg.split(' ');
+    try {
+        msg = msg.split(' ');
 
-    if (msg[0] == "!" + botName) {
-        if (msg[1] == "끝말잇기") {
+        if (msg[0] == "!" + botName && msg[1] == "끝말잇기") {
+
             if (E_playroom[room]) {
                 replier.reply(
                     "-=-=-=-=-=안내-=-=-=-=-=\n" +
@@ -106,16 +107,8 @@ function response(room, msg, sender, isGroupChat, replier, ImageDB, packageName,
                     }
                 }
 
-                var setLife = 1;
-                if (msg.indexOf("-t") != -1) {
-                    setLife = parseInt(msg[msg.indexOf("-t") + 1]);
-                    if (isNaN(setLife) == true || parseInt(setLife) == 0) {
-                        setLife = 1;
-                    }
-                }
-
                 var mode = true;
-                if (msg.indexOf("-y") != -1) {
+                if (msg.indexOf("-k") != -1) {
                     mode = false;
                 }
 
@@ -163,113 +156,6 @@ function response(room, msg, sender, isGroupChat, replier, ImageDB, packageName,
                     "제한시간 :" + E_playroom[room].timer + "초"
                 );
 
-                var checkWin = parseInt(E_playroom[room].nowPlaying);
-                java.lang.Thread.sleep(E_playroom[room].timer * 1000);
-                if (E_playroom[room].user[E_playroom[room].nowPlaying] != checkWin) {
-                    return;
-                }
-                replier.reply(
-                    "-=-=-=-=-=안내-=-=-=-=-=\n" +
-                    "게임이 종료되었습니다.\n" +
-                    sender + "(이)가 게임에서 패배하였습니다.\n" +
-                    "-=-=-=-=-=-=-=-=-=-=-=-="
-                );
-                delete E_playroom[room];
-            }
-            return;
-        }
-    }
-
-    if (msg[0] == "/참가") {
-        try {
-            if (E_playroom[room].user.indexOf(sender) != -1) {
-                replier.reply("참가는 한 번 만 가능합니다");
-            } else if (E_playroom[room].state == "wating") {
-                E_playroom[room].user.push(sender);
-                replier.reply(sender + "(이)가 게임에 참여합니다");
-            } else {
-                replier.reply("현재 게임에 참여하실 수 없습니다.");
-            }
-        } catch (e) {
-            return;
-        }
-    }
-
-
-    if (E_playroom[room] != undefined) {
-        if (E_playroom[room].state == "game" && E_playroom[room].user[E_playroom[room].nowPlaying % E_playroom[room].user.length] == sender) {
-
-            var lastChar = E_playroom[room].used[E_playroom[room].nowPlaying].charAt(E_playroom[room].used[E_playroom[room].nowPlaying].length - 1);
-
-            var startSyllable = [];
-            startSyllable[0] = lastChar;
-            if (getDoumChar(lastChar)) {
-                startSyllable[1] = getDoumChar(lastChar);
-            }
-
-            var dicData = IsUsingWord(msg.join(""));
-
-            if (E_playroom[room].used.indexOf(msg.join("")) != -1) {
-                replier.reply(
-                    "-=-=-=-=-=안내-=-=-=-=-=\n" +
-                    msg.join("") + "은(는) 이미 제출된 단어입니다.\n" +
-                    "초성 : " + E_playroom[room].keywords + "\n" +
-                    "-=-=-=-=-=-=-=-=-=-=-=-="
-                );
-                return;
-            } else if (dicData != false) {
-                if (startSyllable.indexOf(msg.join("").charAt(0)) == -1) {
-                    replier.reply(
-                        "-=-=-=-=-=안내-=-=-=-=-=\n" +
-                        startSyllable.join(" 또는 ") + "(으)로 시작하는 단어를 입력해주세요.\n" +
-                        "이전단어 : " + E_playroom[room].used[E_playroom[room].nowPlaying] + "\n" +
-                        "-=-=-=-=-=-=-=-=-=-=-=-="
-                    );
-                    return;
-                }
-
-                if (E_playroom[room].mode == "noOneKill" && E_playroom[room].blackList.indexOf(lastChar) != -1) {
-                    replier.reply(
-                        "-=-=-=-=-=안내-=-=-=-=-=\n" +
-                        "한방단어 제한 모드입니다.\n" +
-                        E_playroom[room].blackList.join(", ") +
-                        "으로 끝 나는 단어는 사용 할 수 없습니다.\n" +
-                        "-=-=-=-=-=-=-=-=-=-=-=-="
-                    );
-                    return;
-                }
-
-                E_playroom[room].nowPlaying++;
-                E_playroom[room].used.push(msg.join(""));
-
-                if (E_playroom[room].nowPlaying % E_playroom[room].user.length == 0) {
-
-                    if (E_playroom[room].timer - 1 > 1) {
-                        E_playroom[room].timer = E_playroom[room].timer - 1;
-                    } else {
-                        E_playroom[room].timer = 1;
-                    }
-                }
-
-                lastChar = E_playroom[room].used[E_playroom[room].nowPlaying].charAt(E_playroom[room].used[E_playroom[room].nowPlaying].length - 1);
-
-                startSyllable = [];
-                startSyllable[0] = lastChar;
-                if (getDoumChar(lastChar)) {
-                    startSyllable[1] = getDoumChar(lastChar);
-                }
-
-                replier.reply(
-                    "-=-=-=-=-=안내-=-=-=-=-=\n" +
-                    "[" + dicData[2] + "] " + dicData[1] + "\n" +
-                    dicData[3] + "\n" +
-                    "-=-=-=-=-=-=-=-=-=-=-=-=\n" +
-                    E_playroom[room].user[(E_playroom[room].nowPlaying % E_playroom[room].user.length)] + "의 차례\n" +
-                    startSyllable.join(" 또는 ") + "(으)로 시작하는 단어를 입력해주세요.\n" +
-                    "이전단어 : " + E_playroom[room].used[E_playroom[room].nowPlaying] + "/" + E_playroom[room].timer + "초\n" +
-                    "-=-=-=-=-=-=-=-=-=-=-=-="
-                );
-
                 var checkWin = E_playroom[room].nowPlaying;
                 java.lang.Thread.sleep(E_playroom[room].timer * 1000);
 
@@ -283,17 +169,133 @@ function response(room, msg, sender, isGroupChat, replier, ImageDB, packageName,
                     delete E_playroom[room];
                     return;
                 }
+            }
+            return;
+        }
 
-            } else {
-                replier.reply(
-                    "-=-=-=-=-=안내-=-=-=-=-=\n" +
-                    msg.join("") + "은(는) 사전에 등록되어 있지 않습니다.\n" +
-                    "이전단어 : " + E_playroom[room].used[E_playroom[room].nowPlaying] + "\n" +
-                    "-=-=-=-=-=-=-=-=-=-=-=-="
-                );
+        if (msg[0] == "/참가") {
+            try {
+                if (E_playroom[room].user.indexOf(sender) != -1) {
+                    replier.reply("참가는 한 번 만 가능합니다");
+                } else if (E_playroom[room].state == "wating") {
+                    E_playroom[room].user.push(sender);
+                    replier.reply(sender + "(이)가 게임에 참여합니다");
+                } else {
+                    replier.reply("현재 게임에 참여하실 수 없습니다.");
+                }
+            } catch (e) {
+                return;
             }
         }
+
+
+        if (E_playroom[room] != undefined) {
+            if (E_playroom[room].state == "game" && E_playroom[room].user[E_playroom[room].nowPlaying % E_playroom[room].user.length] == sender) {
+
+                var lastChar = E_playroom[room].used[E_playroom[room].nowPlaying].charAt(E_playroom[room].used[E_playroom[room].nowPlaying].length - 1);
+
+                var startSyllable = [];
+                startSyllable[0] = lastChar;
+                if (getDoumChar(lastChar)) {
+                    startSyllable[1] = getDoumChar(lastChar);
+                }
+
+                var dicData = IsUsingWord(msg.join(""));
+
+                if (E_playroom[room].used.indexOf(msg.join("")) != -1) {
+                    replier.reply(
+                        "-=-=-=-=-=안내-=-=-=-=-=\n" +
+                        msg.join("") + "은(는) 이미 제출된 단어입니다.\n" +
+                        "초성 : " + E_playroom[room].keywords + "\n" +
+                        "-=-=-=-=-=-=-=-=-=-=-=-="
+                    );
+                    return;
+                } else if (dicData != false) {
+                    if (startSyllable.indexOf(msg.join("").charAt(0)) == -1) {
+                        replier.reply(
+                            "-=-=-=-=-=안내-=-=-=-=-=\n" +
+                            startSyllable.join(" 또는 ") + "(으)로 시작하는 단어를 입력해주세요.\n" +
+                            "이전단어 : " + E_playroom[room].used[E_playroom[room].nowPlaying] + "\n" +
+                            "-=-=-=-=-=-=-=-=-=-=-=-="
+                        );
+                        return;
+                    }
+
+                    if (E_playroom[room].difficulty == "noOneKill" && E_playroom[room].blackList.indexOf(msg.join("").charAt(msg.join("").length - 1)) != -1) {
+                        replier.reply(
+                            "-=-=-=-=-=안내-=-=-=-=-=\n" +
+                            "한방단어 제한 모드입니다.\n" +
+                            E_playroom[room].blackList.join(", ") +
+                            "으로 끝 나는 단어는 사용 할 수 없습니다.\n" +
+                            "-=-=-=-=-=-=-=-=-=-=-=-="
+                        );
+                        return;
+                    }
+
+                    E_playroom[room].nowPlaying++;
+                    E_playroom[room].used.push(msg.join(""));
+
+                    if (E_playroom[room].nowPlaying % E_playroom[room].user.length == 0) {
+
+                        if (E_playroom[room].timer - 1 > 1) {
+                            E_playroom[room].timer = E_playroom[room].timer - 1;
+                        } else {
+                            E_playroom[room].timer = 1;
+                        }
+                    }
+
+                    lastChar = E_playroom[room].used[E_playroom[room].nowPlaying].charAt(E_playroom[room].used[E_playroom[room].nowPlaying].length - 1);
+
+                    startSyllable = [];
+                    startSyllable[0] = lastChar;
+                    if (getDoumChar(lastChar)) {
+                        startSyllable[1] = getDoumChar(lastChar);
+                    }
+
+                    replier.reply(
+                        "-=-=-=-=-=안내-=-=-=-=-=\n" +
+                        "[" + dicData[2] + "] " + dicData[1] + "\n" +
+                        dicData[3] + "\n" +
+                        "-=-=-=-=-=-=-=-=-=-=-=-=\n" +
+                        E_playroom[room].user[(E_playroom[room].nowPlaying % E_playroom[room].user.length)] + "의 차례\n" +
+                        startSyllable.join(" 또는 ") + "(으)로 시작하는 단어를 입력해주세요.\n" +
+                        "이전단어 : " + E_playroom[room].used[E_playroom[room].nowPlaying] + "/" + E_playroom[room].timer + "초\n" +
+                        "-=-=-=-=-=-=-=-=-=-=-=-="
+                    );
+
+                    var checkWin = E_playroom[room].nowPlaying;
+                    java.lang.Thread.sleep(E_playroom[room].timer * 1000);
+
+                    if (E_playroom[room] && E_playroom[room].nowPlaying == checkWin) {
+                        replier.reply(
+                            "-=-=-=-=-=안내-=-=-=-=-=\n" +
+                            "게임이 종료되었습니다.\n" +
+                            E_playroom[room].user[checkWin % E_playroom[room].user.length] + "(이)가 게임에서 패배하였습니다.\n" +
+                            "-=-=-=-=-=-=-=-=-=-=-=-="
+                        );
+                        delete E_playroom[room];
+                        return;
+                    }
+
+                } else {
+                    replier.reply(
+                        "-=-=-=-=-=안내-=-=-=-=-=\n" +
+                        msg.join("") + "은(는) 사전에 등록되어 있지 않습니다.\n" +
+                        "이전단어 : " + E_playroom[room].used[E_playroom[room].nowPlaying] + "\n" +
+                        "-=-=-=-=-=-=-=-=-=-=-=-="
+                    );
+                }
+            }
+        }
+    } catch (e) {
+        replier.reply(
+            "-=-=-=-=-=Err Log-=-=-=-=-=\n" +
+            e + "\n" +
+            "-=-=-=-=-=-=-=-=-=-=-=-="
+        );
     }
+
+
 }
 
 function onStartCompile() {

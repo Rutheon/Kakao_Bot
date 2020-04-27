@@ -1,4 +1,4 @@
-const scriptName = "main.js";
+const scriptName = "serch.js";
 const botName = "민규봇";
 
 var preSenders = null;
@@ -46,7 +46,10 @@ function response(room, msg, sender, isGroupChat, replier, ImageDB, packageName,
                     "문제풀이 [사이트] [문제번호] - (임시 운영) 1학년 프로그래밍 과제에 대한 해설을 제공합니다.\n" +
                     "코드는 제공하지 않습니다\n" +
                     "-=-=-=-=-=기타 기능-=-=-=-=-=\n" +
-                    "훈민정음 {옵션} {...} - 그냥 심심할때는 게임 한판을...\n"
+                    "훈민정음 {옵션} {...} - 그냥 심심할때는 게임 한판을...\n"+
+                    "끝말잇기 {옵션} {...} - 그냥 심심할때는 게임 한판을...\n"+
+                    "-=-=-=-=-=기타 기능-=-=-=-=-=\n" +
+                    "기능 추가 요청/버그 리포트 : https://github.com/deustudy/Kakao_Bot/issues\n"
                 );
                 return;
             }
