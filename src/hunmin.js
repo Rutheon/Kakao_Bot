@@ -6,6 +6,51 @@ var preSendTime = null;
 var preChat = null;
 var coolDown = 5;
 
+function shuffle(a) {
+    var j, x, i;
+    for (i = a.length; i; i -= 1) {
+        j = Math.floor(Math.random() * i);
+        x = a[i - 1];
+        a[i - 1] = a[j];
+        a[j] = x;
+    }
+}
+
+var hash = function (s) {
+    /* Simple hash function. */
+    var a = 1,
+        c = 0,
+        h, o;
+    if (s) {
+        a = 0;
+        for (h = s.length - 1; h >= 0; h--) {
+            o = s.charCodeAt(h);
+            a = (a << 6 & 268435455) + o + (o << 14);
+            c = a & 266338304;
+            a = c !== 0 ? a ^ c >> 21 : a;
+        }
+    }
+    return String(a);
+};
+
+function permissionCheck(sender, hash) {
+    var adminData;
+    try {
+         adminData = DataBase.getDataBase("admin.txt").split("}");
+    } catch (e) {
+        return false;
+    }
+
+    for (let index = 0; index < adminData.length; index++) {
+        if (adminData[index].indexOf(hash) != -1) {
+            if (adminData[index].split(",")[0] == sender) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 function IsUsingWord(str) {
     var dicData = Utils.getWebText("https://stdict.korean.go.kr/api/search.do?key=4667CDAEBF929656EF78F007CCA0848A&q=" + str).replace(/\s\s/g, "");
     var data = [];
@@ -129,6 +174,7 @@ function response(room, msg, sender, isGroupChat, replier, ImageDB, packageName,
 
                 const timer = 15;
                 java.lang.Thread.sleep(timer * 1000);
+                shuffle(h_playroom[room].user);
                 h_playroom[room].state = "game";
                 replier.reply(
                     "-=-=-=-=-=안내-=-=-=-=-=\n" +
@@ -146,7 +192,7 @@ function response(room, msg, sender, isGroupChat, replier, ImageDB, packageName,
                 if (h_playroom[room].user[h_playroom[room].nowPlaying] != checkWin) {
                     return;
                 }
-                
+
                 replier.reply(
                     "-=-=-=-=-=안내-=-=-=-=-=\n" +
                     "게임이 종료되었습니다.\n" +
@@ -228,6 +274,27 @@ function response(room, msg, sender, isGroupChat, replier, ImageDB, packageName,
                         "-=-=-=-=-=-=-=-=-=-=-=-="
                     );
                 }
+            }
+        }
+
+        if (msg[0] == "/종료" && h_playroom[room]) {
+            var check = permissionCheck(sender, hash(ImageDB.getProfileImage()));
+
+            if (check == true) {
+                replier.reply(
+                    "-=-=-=-=-=안내-=-=-=-=-=\n" +
+                    "관리자의 권한으로 게임이 중지됩니다\n" +
+                    "-=-=-=-=-=-=-=-=-=-=-=-="
+                );
+                delete h_playroom[room];
+                return;
+            } else {
+                replier.reply(
+                    "-=-=-=-=-=안내-=-=-=-=-=\n" +
+                    "Permission denied.\n" +
+                    "게임을 중지할 권한이 업습니다.\n" +
+                    "-=-=-=-=-=-=-=-=-=-=-=-="
+                );
             }
         }
 
